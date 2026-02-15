@@ -172,3 +172,13 @@ That's why CUB time dowsn't scale with problem size.
 </td>
 </tr>
 </table>
+
+```cpp
+auto begin = std::chrono::high_resolution_clock::now();
+auto cell_ids = thrust::make_computing_iterator(0);
+cub::DeviceTransform::transform(cell_ids, out.begin(), num_cells, compute);
+cudaDeviceSynchronize();
+// cudaDeviceSynchronize() will force the cpu to wait for the gpu to finish
+// resultig in the same behaviour as thrust in this specific istamce
+auto end = std::chrono::high_resolution_clock::now();
+```
