@@ -1,4 +1,17 @@
-_temp = 20.0f; // Ambient room temperature in Celsius
+// nvcc --extended-lambda cuda_main.cu -o cuda_app && ./cuda_app
+
+# include <vector>
+# include <algorithm>
+# include <iostream>
+# include <thrust/universal_vector.h>
+# include <thrust/transform.h>
+# include <thrust/execution_policy.h>
+
+int main() {
+
+    // Simulation Constants
+    const float k = 0.5f; // Thermal conductivity constant (rate of cooling)
+    const float ambient_temp = 20.0f; // Ambient room temperature in Celsius
 
     // Initial State: Vector of temperatures for 3 different cups
     // Cup 1: 42°C, Cup 2: 24°C, Cup 3: 50°C
