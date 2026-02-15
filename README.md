@@ -1,24 +1,8 @@
-# cuda-sandbox
-
 Welcome to my CUDA Sandbox! This repository serves as a playground for experimenting with CUDA C++ and the Thrust library.
 
 For comprehensive documentation on the algorithms and data structures, refer to the [nvidia thrust api](https://nvidia.github.io/cccl/thrust/api_docs/algorithms.html).
 
-![Thrust policy](src/image-1.png)
-
-![Always choose the best tool for the job](src/image.png)
-The reason CPU latency is lower—despite the physical proximity of GPU memory—comes down to how their respective memory controllers and hierarchies are optimized.
-The CPU is a latency-optimized processor. It is designed to minimize the time it takes to complete a single task (sequential execution). The GPU is a throughput-optimized processor, designed to maximize the total number of tasks completed per second (parallel execution).
-Even though DDR4/5 are technically "slower" than GDDR6/6X/7, the CPU wins on latency for several structural reasons:
-- the CPU’s L1, L2, and L3 caches are integrated directly onto the silicon.
-- The CPU uses massive amounts of die area for "branch prediction" and "speculative execution." It essentially guesses what data you need next and pulls it into the cache before you even ask for it, making the effective latency feel near-zero.
-- The CPU memory controller is optimized for "Random Access." When a CPU wants a byte, it wants it now. The GPU memory controller is designed to manage thousands of concurrent requests. To handle this volume, the GPU uses a "scheduler" that bundles requests together. This bundling process adds a "waiting period" (latency) to every single request, even if the bus itself is wide.
-GDDR (Graphics DDR) is actually a modified version of standard DDR designed for high frequency and high power consumption at the cost of latency.
-- DDR (CPU): Focuses on low CAS (Column Address Strobe) latency. It can switch between different "rows" of memory very quickly.
-- GDDR (GPU): Uses a much higher "burst length." It is great at reading a long string of contiguous data (like pixels for a frame) but is relatively sluggish at jumping to a random, unrelated memory address.
-In Standard C++: We write code to avoid "cache misses." Because the CPU is so fast, waiting for RAM is a death sentence for performance. We use "Data Oriented Design" to keep things in the L3 cache.
-In CUDA C++: We don't try to hide latency with caches as much; we hide it with concurrency. If one "warp" (a group of threads) is waiting for a high-latency memory read from VRAM, the GPU hardware instantly switches to a different warp that is ready to calculate.
-
+# personal notes:
 ## std::transform
 ```cpp
 std::vector<float> temp{42, 24, 50};
@@ -130,3 +114,17 @@ it[1] = 20;
 std::printf("a[0]: %d\n", a[0]);    // prints 5
 std::printf("a[1]: %d\n", a[1]);    // prints 10
 ```
+![Thrust policy](src/image-1.png)
+
+![Always choose the best tool for the job](src/image.png)
+The reason CPU latency is lower—despite the physical proximity of GPU memory—comes down to how their respective memory controllers and hierarchies are optimized.
+The CPU is a latency-optimized processor. It is designed to minimize the time it takes to complete a single task (sequential execution). The GPU is a throughput-optimized processor, designed to maximize the total number of tasks completed per second (parallel execution).
+Even though DDR4/5 are technically "slower" than GDDR6/6X/7, the CPU wins on latency for several structural reasons:
+- the CPU’s L1, L2, and L3 caches are integrated directly onto the silicon.
+- The CPU uses massive amounts of die area for "branch prediction" and "speculative execution." It essentially guesses what data you need next and pulls it into the cache before you even ask for it, making the effective latency feel near-zero.
+- The CPU memory controller is optimized for "Random Access." When a CPU wants a byte, it wants it now. The GPU memory controller is designed to manage thousands of concurrent requests. To handle this volume, the GPU uses a "scheduler" that bundles requests together. This bundling process adds a "waiting period" (latency) to every single request, even if the bus itself is wide.
+GDDR (Graphics DDR) is actually a modified version of standard DDR designed for high frequency and high power consumption at the cost of latency.
+- DDR (CPU): Focuses on low CAS (Column Address Strobe) latency. It can switch between different "rows" of memory very quickly.
+- GDDR (GPU): Uses a much higher "burst length." It is great at reading a long string of contiguous data (like pixels for a frame) but is relatively sluggish at jumping to a random, unrelated memory address.
+In Standard C++: We write code to avoid "cache misses." Because the CPU is so fast, waiting for RAM is a death sentence for performance. We use "Data Oriented Design" to keep things in the L3 cache.
+In CUDA C++: We don't try to hide latency with caches as much; we hide it with concurrency. If one "warp" (a group of threads) is waiting for a high-latency memory read from VRAM, the GPU hardware instantly switches to a different warp that is ready to calculate.
