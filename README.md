@@ -160,12 +160,12 @@ auto end = std::chrono::high_resolution_clock::now();
 
 <table>
 <tr>
-<td width="70%">
+<td width="65%">
 The CPU doesn't wait for the transformation to finish before executing the next instruction (regording end time).
 That's why CUB time dowsn't scale with problem size.
 
 </td>
-<td width="30%">
+<td width="35%">
 
 ![alt text](src/image-2.png)
 
