@@ -143,16 +143,16 @@ In Standard C++: We write code to avoid "cache misses." Because the CPU is so fa
 In CUDA C++: We don't try to hide latency with caches as much; we hide it with concurrency. If one "warp" (a group of threads) is waiting for a high-latency memory read from VRAM, the GPU hardware instantly switches to a different warp that is ready to calculate.
 
 ## cub vs thrust
+To use Aynchronous use of CPU and GPU, to exploit cpu_time in which the cpu is waiting for the gpu to finish, we cannot use 'thrust' (for anything that we want to be asynchronous), instead we can acces the [CUB libabry](https://nvidia.github.io/cccl/cub/).
 
 <table>
 <tr>
-<td width="50%">
-To use Aynchronous use of CPU and GPU, to exploit cpu_time in which the cpu is waiting for the gpu to finish, we cannot use 'thrust' (for anything that we want to be asynchronous), instead we can acces the [CUB libabry](https://nvidia.github.io/cccl/cub/).
+<td width="40%">
 The CPU doesn't wait for the transformation to finish before executing the next instruction (regording end time).
 That's why CUB time dowsn't scale with problem size.
 
 </td>
-<td width="50%">
+<td width="60%">
 
 ![alt text](src/image-2.png)
 
