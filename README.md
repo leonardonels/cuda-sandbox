@@ -2,7 +2,17 @@ Welcome to my CUDA Sandbox! This repository serves as a playground for experimen
 
 For comprehensive documentation on the algorithms and data structures, refer to the [nvidia thrust api](https://nvidia.github.io/cccl/thrust/api_docs/algorithms.html).
 
-# personal notes:
+# personal notes
+
+- [std::transform](#stdtransform)
+- [thrust::transform](#thrusttransform)
+- [counting_iterator](#counting_iterator)
+- [transform_iterator](#transform_iterator)
+- [zip_iterator](#zip_iterator)
+- [transform_iterator + zip_iterator](#transform_iterator--zip_iterator)
+- [transform_output_iterator](#transform_output_iterator)
+- [Notes from Theory](#notes-from-theory)
+
 ## std::transform
 ```cpp
 std::vector<float> temp{42, 24, 50};
@@ -114,6 +124,8 @@ it[1] = 20;
 std::printf("a[0]: %d\n", a[0]);    // prints 5
 std::printf("a[1]: %d\n", a[1]);    // prints 10
 ```
+
+## notes from theory
 ![Thrust policy](src/image-1.png)
 
 ![Always choose the best tool for the job](src/image.png)
