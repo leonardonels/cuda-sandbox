@@ -1,3 +1,5 @@
+// nvcc --extended-lambda main.cu -o var && ./var
+
 #include <thrust/reduce.h>
 #include <thrust/execution_policy.h>
 #include <thrust/universal_vector.h>
