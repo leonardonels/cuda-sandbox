@@ -1,6 +1,8 @@
 # cuda-sandbox
 
-[NVIDIA THRUST API](https://nvidia.github.io/cccl/thrust/api_docs/algorithms.html)
+Welcome to my CUDA Sandbox! This repository serves as a playground for experimenting with CUDA C++ and the Thrust library.
+
+For comprehensive documentation on the algorithms and data structures, refer to the [nvidia thrust api](https://nvidia.github.io/cccl/thrust/api_docs/algorithms.html).
 
 ![Thrust policy](src/image-1.png)
 
