@@ -12,6 +12,7 @@ For comprehensive documentation on the algorithms and data structures, refer to 
 - [transform_iterator + zip_iterator](#transform_iterator--zip_iterator)
 - [transform_output_iterator](#transform_output_iterator)
 - [Notes from Theory](#notes-from-theory)
+- [cub vs thrust](#cub-vs-thrust)
 
 ## std::transform
 ```cpp
@@ -159,4 +160,5 @@ auto end = std::chrono::high_resolution_clock::now();
 ```
 The CPU doesn't wait for the transformation to finish before executing the next instruction (regording end time).
 That's why CUB time dowsn't scale with problem size.
+
 ![alt text](src/image-2.png)
