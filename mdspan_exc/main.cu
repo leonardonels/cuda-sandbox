@@ -22,6 +22,10 @@ void simulate(int height, int width,
 
   // also we can add domain specific names to the mdspan to make it more readable
   using temperature_grid_f = cuda::std::mdspan<float, cuda::std::dextents<int, 2>>;
+  
+  // if we want to use double precision we can just change the type here and the rest of the code will work without any changes
+  // using temperature_grid_d = cuda::std::mdspan<double, cuda::std::dextents<int, 2>>;     
+
   temperature_grid_f temp(thrust::raw_pointer_cast(in.data()), height, width);
 
   thrust::tabulate(
