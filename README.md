@@ -145,6 +145,10 @@ In CUDA C++: We don't try to hide latency with caches as much; we hide it with c
 ## cub vs thrust
 To use Aynchronous use of CPU and GPU, to exploit cpu_time in which the cpu is waiting for the gpu to finish, we cannot use 'thrust' (for anything that we want to be asynchronous), instead we can acces the [CUB libabry](https://nvidia.github.io/cccl/cub/)
 
+<table>
+<tr>
+<td width="50%">
+
 ```cpp
 // thrust
 auto begin = std::chrono::high_resolution_clock::now();
@@ -158,6 +162,16 @@ cub::DeviceTransform::transform(cell_ids, out.begin(), num_cells, compute);
 auto end = std::chrono::high_resolution_clock::now();
 
 ```
+
+</td>
+<td width="50%">
+
+![alt text](src/image-2.png)
+
+</td>
+</tr>
+</table>
+
 The CPU doesn't wait for the transformation to finish before executing the next instruction (regording end time).
 That's why CUB time dowsn't scale with problem size.
 
