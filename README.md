@@ -140,3 +140,23 @@ GDDR (Graphics DDR) is actually a modified version of standard DDR designed for 
 - GDDR (GPU): Uses a much higher "burst length." It is great at reading a long string of contiguous data (like pixels for a frame) but is relatively sluggish at jumping to a random, unrelated memory address.
 In Standard C++: We write code to avoid "cache misses." Because the CPU is so fast, waiting for RAM is a death sentence for performance. We use "Data Oriented Design" to keep things in the L3 cache.
 In CUDA C++: We don't try to hide latency with caches as much; we hide it with concurrency. If one "warp" (a group of threads) is waiting for a high-latency memory read from VRAM, the GPU hardware instantly switches to a different warp that is ready to calculate.
+
+## cub vs thrust
+To use Aynchronous use of CPU and GPU, to exploit cpu_time in which the cpu is waiting for the gpu to finish, we cannot use 'thrust' (for anything that we want to be asynchronous), instead we can acces the [CUB libabry](https://nvidia.github.io/cccl/cub/)
+
+```cpp
+// thrust
+auto begin = std::chrono::high_resolution_clock::now();
+thrust::tabulate(thrust::device, out.begin(), out.end(), compute);
+auto end = std::chrono::high_resolution_clock::now();
+
+// cub
+auto begin = std::chrono::high_resolution_clock::now();
+auto cell_ids = thrust::make_computing_iterator(0);
+cub::DeviceTransform::transform(cell_ids, out.begin(), num_cells, compute);
+auto end = std::chrono::high_resolution_clock::now();
+
+```
+The CPU doesn't wait for the transformation to finish before executing the next instruction (regording end time).
+That's why CUB time dowsn't scale with problem size.
+![alt text](src/image-2.png)
