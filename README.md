@@ -1,5 +1,9 @@
 # cuda-sandbox
 
+[NVIDIA THRUST API](https://nvidia.github.io/cccl/thrust/api_docs/algorithms.html)
+
+![Thrust policy](src/image-1.png)
+
 ![Always choose the best tool for the job](src/image.png)
 The reason CPU latency is lower—despite the physical proximity of GPU memory—comes down to how their respective memory controllers and hierarchies are optimized.
 The CPU is a latency-optimized processor. It is designed to minimize the time it takes to complete a single task (sequential execution). The GPU is a throughput-optimized processor, designed to maximize the total number of tasks completed per second (parallel execution).
@@ -13,11 +17,7 @@ GDDR (Graphics DDR) is actually a modified version of standard DDR designed for 
 In Standard C++: We write code to avoid "cache misses." Because the CPU is so fast, waiting for RAM is a death sentence for performance. We use "Data Oriented Design" to keep things in the L3 cache.
 In CUDA C++: We don't try to hide latency with caches as much; we hide it with concurrency. If one "warp" (a group of threads) is waiting for a high-latency memory read from VRAM, the GPU hardware instantly switches to a different warp that is ready to calculate.
 
-[NVIDIA THRUST API](https://nvidia.github.io/cccl/thrust/api_docs/algorithms.html)
-
-![Thrust policy](src/image-1.png)
-
-std::transform
+## std::transform
 ```cpp
 std::vector<float> temp{42, 24, 50};
 
@@ -35,7 +35,7 @@ for(int i = 0; i <temp.size(); i++){
 }
 ```
 
-thrust::transform
+## thrust::transform
 ```cpp
 thrust::universal_vector<float> temp{42, 24, 50};
 
@@ -54,7 +54,7 @@ for(int i = 0; i <temp.size(); i++){
 }
 ```
 
-counting_iterator
+## counting_iterator
 ```cpp
 struct counting_iterator
 {
@@ -65,7 +65,7 @@ struct counting_iterator
 };
 ```
 
-transform_iterator
+## transform_iterator
 ```cpp
 struct transform_iterator
 {
@@ -78,7 +78,7 @@ struct transform_iterator
 };
 ```
 
-zip_iterator
+## zip_iterator
 ```cpp
 struct zip_iterator
 {
@@ -92,7 +92,7 @@ struct zip_iterator
 };
 ```
 
-transform_iterator + zip_iterator
+## transform_iterator + zip_iterator
 ```cpp
 struct transform_iterator
 {
@@ -105,7 +105,7 @@ struct transform_iterator
 };
 ```
 
-transform_output_iterator
+## transform_output_iterator
 ```cpp
 struct wrapper{
     int *ptr;
