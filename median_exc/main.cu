@@ -1,4 +1,4 @@
-// Modify code to GPU-acceleratemedian computation
+// Modify code to GPU-acceleratemedian computation [nvcc --extended-lambda main.cu -o med && ./med]
 
 #include <thrust/universal_vector.h>
 #include <thrust/execution_policy.h>
