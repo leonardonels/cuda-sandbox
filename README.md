@@ -16,3 +16,115 @@ In CUDA C++: We don't try to hide latency with caches as much; we hide it with c
 [NVIDIA THRUST API](https://nvidia.github.io/cccl/thrust/api_docs/algorithms.html)
 
 ![Thrust policy](src/image-1.png)
+
+std::transform
+```cpp
+std::vector<float> temp{42, 24, 50};
+
+auto op = [=](float temp){
+    float diff = ambient_temp - temp;
+    return temp + k * diff;
+};
+
+std::transform( temp.begin(), temp.end(),   // input
+                temp.begin(),               // output
+                op);                        // lambda function
+
+for(int i = 0; i <temp.size(); i++){
+    temp[i] = op(temp[i]);
+}
+```
+
+thrust::transform
+```cpp
+thrust::universal_vector<float> temp{42, 24, 50};
+
+auto op = [=] __host__ __device__ (float temp){
+    float diff = ambient_temp - temp;
+    return temp + k * diff;
+};
+
+thrust::transform(  thrust::device,             // where to perform the computation: device -> GPU host -> CPU
+                    temp.begin(), temp.end(),   // input
+                    temp.begin(),               // output
+                    op);                        // lambda function
+
+for(int i = 0; i <temp.size(); i++){
+    temp[i] = op(temp[i]);
+}
+```
+
+counting_iterator
+```cpp
+struct counting_iterator
+{
+    int operator[](int i)
+    {
+        return i;
+    }
+};
+```
+
+transform_iterator
+```cpp
+struct transform_iterator
+{
+    int *a;
+
+    int operator[](int i)
+    {
+        return a[i] * 2;
+    }
+};
+```
+
+zip_iterator
+```cpp
+struct zip_iterator
+{
+    int *a;
+    int *b;
+
+    std::tuple<int, int> operator[](int i)
+    {
+        return {a[i], b[i]};
+    }
+};
+```
+
+transform_iterator + zip_iterator
+```cpp
+struct transform_iterator
+{
+    zip_iterator zip;
+    int operator[](int i)
+    {
+        auto [a, b] = zip[i];
+        return abs(a - b);
+    }
+};
+```
+
+transform_output_iterator
+```cpp
+struct wrapper{
+    int *ptr;
+
+    void operator=(int value) { *ptr = value / 2; };
+};
+
+struct transform_output_iterator{
+    int *a;
+
+    wrapper operator[](int i){return {a + i}; }
+};
+
+std::array<int, 3> a{0, 1, 2};
+transform_output_iterator it{a.data()};
+
+it[0] = 10;
+it[1] = 20;
+
+std::printf("a[0]: %d\n", a[0]);    // prints 5
+std::printf("a[1]: %d\n", a[1]);    // prints 10
+```
