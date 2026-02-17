@@ -486,7 +486,7 @@ First easy solution:
 //{
     int column = blockIdx.x * blockDim.x + threadIdx.x;
 //
-    if (column < temp.extent(1))    // check if a given thread is whitin bounds of problem size
+    if (column < temp.extent(1)) // check if a given thread is whitin bounds of problem size
     {
 //    if (abs(temp(row, column) - temp(temp.extent(0) - 1 - row, column)) > 0.1) {
 //        printf("Error: asymmetry in %d\n", column);
