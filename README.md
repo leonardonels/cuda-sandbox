@@ -478,3 +478,22 @@ void symmetry_check(dli::temperature_grid_f temp, int row)
 -> ERROR!!
 By rounding up the number of threads to be sure to have at least one thread for each element of the problem we might have more threads than elemets and we can incour in an out of bound error in which on ore more threads will try to access an element that doesn't exists.
 ![alt text](src/image-3.png)
+
+First easy solution: 
+## Boundary check
+```cpp
+//__global__ void symmetry_check_kernel(dli::temperature_grid_f temp, int row)
+//{
+    int column = blockIdx.x * blockDim.x + threadIdx.x;
+//
+    if (column < temp.extent(1))    // check if a given thread is whitin bounds of problem size
+    {
+//    if (abs(temp(row, column) - temp(temp.extent(0) - 1 - row, column)) > 0.1) {
+//        printf("Error: asymmetry in %d\n", column);
+//    }
+    }
+//}
+```
+![alt text](src/image-4.png)
+
+lesson3::24:33
