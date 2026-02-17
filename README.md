@@ -420,6 +420,7 @@ As a rule of thumb:
 - profile for further tuning
 
 `Instead grid size frequently depend on problem size.`
+
 As a rule of thumb, use `cuda::ceil_div` to compute grid size.
 ```cpp
 // 5.120.000-threads cuda kernel - 10 compute steps take 0.0003
