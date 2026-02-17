@@ -17,6 +17,8 @@ For comprehensive documentation on the algorithms and data structures, refer to 
 - [cudaStream](#cudastream)
 - [pinned memory](#pinned-memory)
 - [cuda kernel functions](#cuda-kernels)
+    - [boundary check](#boundary-check)
+    - [histogram approach](#histogram-approach)
 
 ## std::transform
 ```cpp
@@ -479,7 +481,6 @@ void symmetry_check(dli::temperature_grid_f temp, int row)
 By rounding up the number of threads to be sure to have at least one thread for each element of the problem we might have more threads than elemets and we can incour in an out of bound error in which on ore more threads will try to access an element that doesn't exists.
 ![alt text](src/image-3.png)
 
-First easy solution: 
 ## Boundary check
 ```cpp
 //__global__ void symmetry_check_kernel(dli::temperature_grid_f temp, int row)
@@ -496,4 +497,5 @@ First easy solution:
 ```
 ![alt text](src/image-4.png)
 
+## Histogram approach
 lesson3::24:33
