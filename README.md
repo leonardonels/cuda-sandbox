@@ -15,6 +15,7 @@ For comprehensive documentation on the algorithms and data structures, refer to 
 - [cub vs thrust](#cub-vs-thrust)
 - [Nsight Systems](#nsight-systems)
 - [cudaStream](#cudastream)
+- [pinned memory](#pinned-memory)
 
 ## std::transform
 ```cpp
@@ -283,4 +284,14 @@ cudaStreamSynchronoze(copy_stream); // wait for copy in the copy stream to finis
 store(write_step, height, width, hprev);
 
 cudaStreamSynchronize(compute_stream);
+```
+
+## pinned memory
+Due to paging, stuff in System memory can be moved to Disk memory unless is pinned into System memory. Fortunally the gpu can only read from pinned memory, but the System will move data between pinned memory and unpinned memory every time that need to move data to and from the gpu, transforming our cudaMemcpyAsync int a synchronous copy.
+`When you "Pin" memory (using cudaMallocHost), you are telling the OS: "Lock this data down. Do not move it, and do not swap it to the disk."`
+By using a `thrust::universal_host_pinned_vector` we can force the data to remain into the pinned memory.
+```cpp
+thrust::host_vector<float> hprev(height * width);
+// need to be changed into:
+thrust::universal_host_pinned_vector<float> hprev(height * width);
 ```
