@@ -16,6 +16,7 @@ For comprehensive documentation on the algorithms and data structures, refer to 
 - [Nsight Systems](#nsight-systems)
 - [cudaStream](#cudastream)
 - [pinned memory](#pinned-memory)
+- [cuda kernel functions](#cuda-kernels)
 
 ## std::transform
 ```cpp
@@ -296,3 +297,18 @@ thrust::host_vector<float> hprev(height * width);
 // need to be changed into:
 thrust::universal_host_pinned_vector<float> hprev(height * width);
 ```
+
+## CUDA Kernels
+- __host__ functions are invoked and executed by the host (CPU)
+- __device__ functions are invoked and executed by the device (GPU)
+- __global__  functions are invoked by the host (CPU) and executed by the device (GPU)
+
+when we use a custom function with thrus::make_ and specify __device__, in reality we are specifying that the compiler must generate device code, but underneat the thrust library acts like a wrapper that uses __global__ to invoke the __device__ function from the host and execute within the device.
+
+CUDA Kernels are custom function at the same level as thrust functions so within CUDA Kernels we are required to specify __global__ to allow the __host__ invocation and __device__ execution.
+
+Kernels are:
+- launched with a triple chevron syntax <<<?,?,?,stream>>> from the CPU
+- executed in `device execution space`
+- asynchronous and
+- parallel
