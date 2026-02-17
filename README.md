@@ -14,7 +14,7 @@ For comprehensive documentation on the algorithms and data structures, refer to 
 - [Notes from Theory](#notes-from-theory)
 - [cub vs thrust](#cub-vs-thrust)
 - [Nsight Systems](#nsight-systems)
-- [stream](#cudastream)
+- [cudaStream](#cudastream)
 
 ## std::transform
 ```cpp
@@ -263,12 +263,24 @@ Examples from [techpowerup.com](https://www.techpowerup.com/gpu-specs/):
 
 We can introduce a buffer on device (or on the host) to copy the result of teh computation and allow the copy between device and host during the next computation.
 ```cpp
-thrust::copy(d_prev.begin(), d_prev.end(), d_buffer.begin());
-cudaMemcpyAsync(h_temp_ptr, buffer_ptr, num_bytes, cudaMemcpyDeviceToHost, copy_stream);
+cudaStream_t copy_stream, compute_stream;   // Create compute and copy sreams
+cudaStreamCreate(&compute_stream);
+cudaStreamCreate(&copy_stream);
+
+thrust::host_vector<float> hprev(height * width);
+
+// we don't need Async here since device to device should be very fast anyway
+thrust::copy(d_prev.begin(), d_prev.end(), d_buffer.begin());   // Synchronously copy into the staging buffer - prevent any datarace
+cudaMemcpyAsync(h_temp_ptr, buffer_ptr, num_bytes, cudaMemcpyDeviceToHost, copy_stream);    // Asynchronously copy from staging buffer into host vector within the copy stream
 
 for (int step = 0, step < steps; step++)
 {
-    sumulate(widt, height, dprev, dnext, compute_stream);
+    sumulate(widt, height, dprev, dnext, compute_stream);   // Launch compute on compute stream
     dprev.swap(dnext);
 }
+
+cudaStreamSynchronoze(copy_stream); // wait for copy in the copy stream to finish before reding the data
+store(write_step, height, width, hprev);
+
+cudaStreamSynchronize(compute_stream);
 ```
