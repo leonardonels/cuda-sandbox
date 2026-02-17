@@ -397,7 +397,7 @@ const int number_of_threads = 2048;
     block_kernel<<<1, number_of_threads, 0, stream>>>(in, out); // invalid configuration argument
 //}
 ```
-WHY?
+### WHY?
 - threads are grouped in blocks
 - all blocks are the same size (max 1024 threads)
 - thread indexing is local within a thread block
@@ -406,22 +406,20 @@ WHY?
 - blockDim.x stores the number of thread in the block
 - gridDim.x stores the number of blocks in the grid
 
-```
-Why 1024 is the maximum number of thread?
+### Why 1024 is the maximum number of thread?
 1024 is not a random number, but is 128 * 32 which is the maximum number of trhead that a single Streaming Multiprocessor can handle inide an Nvidia GPU.
 Each GPU is coposed by several `SM` (84 in an RTX 3090 Ti and 170 in an RTX 5090 for example) and each `SM` has 128 cores that share the same L1 cache. 
 Moreover Nvidia implemented `Warp` as a way to better use each core and hide the latency required for memory access.
 Each core inside a `SM` execute one out of those 32 per cycle and can fetch data for the next `Warp` in the meantime, de facto defining 32 thread for each core for each `SM`.
-```
-Thread block sie doesn't depend on problem size, there is no block size that fits all kernels.
+
+`Thread block sie doesn't depend on problem size, there is no block size that fits all kernels.`
 
 As a rule of thumb:
 - use block size that are multiple of 32
 - use 256 as a good default
 - profile for further tuning
 
-Instead grid size frequently depend on problem size.
-
+`Instead grid size frequently depend on problem size.`
 As a rule of thumb, use `cuda::ceil_div` to compute grid size.
 ```cpp
 // 5.120.000-threads cuda kernel - 10 compute steps take 0.0003
