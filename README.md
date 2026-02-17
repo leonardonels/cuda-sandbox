@@ -250,14 +250,14 @@ If we need to copy data in between computations we can use `cudaStreamSynchroniz
 Since the memory bandwidth on device is usually ~10 times faster that the memory bandwidth on the host, which is already ~3 times faster than the memory bandwidth avaiable on the pci-e bus, copies device to device and host to host are almost free (relative speaking to host to device or device to host), so we can introduce a buffer on device (or on the host) to copy the result of teh computation and allow the copy between device and host during the next computation.
 Examples from [techpowerup.com](https://www.techpowerup.com/gpu-specs/):
 
-                |  memory bandwidth |
-PCI-E gen 5     |   32.0 GB/s       |
-DDR5@6400MT/s   |   102.0 GB/s      |
-RTX 2070s       |   448.0 GB/s      |
-RTX 5060        |   448.0 GB/s      |
-RTX 5070        |   672.0 GB/s      |
-RTX 3090Ti      |   1.01 TB/s       |
-RTX 5090        |   1.79 TB/s       |
+                    |  memory bandwidth |
+    PCI-E gen 5     |   32.0 GB/s       |
+    DDR5@6400MT/s   |   102.0 GB/s      |
+    RTX 2070s       |   448.0 GB/s      |
+    RTX 5060        |   448.0 GB/s      |
+    RTX 5070        |   672.0 GB/s      |
+    RTX 3090Ti      |   1.01 TB/s       |
+    RTX 5090        |   1.79 TB/s       |
 
 ```cpp
 thrust::copy(d_prev.begin(), d_prev.end(), d_buffer.begin());
