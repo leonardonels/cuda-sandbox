@@ -327,7 +327,7 @@ void simulate(temperature_grid_f in,
         }, stream);
 }
 
-// single cuda kernels - 10 compute steps take 4.15
+// single cuda kernel - 10 compute steps take 4.15
 __global__
 void single_thread_kernel(dli::temperature_grid_f in, float *out)
 {
@@ -348,7 +348,7 @@ But this implementation is very slow beacuse be are calling a single cuda core t
 
 With CUDA Kernels we need to implement the parallelisation ourself.
 ```cpp
-// 2 cuda kernels - 10 compute steps take 2.06
+// 2-threads cuda kernel - 10 compute steps take 2.06
 //
 const int number_of_threads = 2;
 //
@@ -372,8 +372,8 @@ const int number_of_threads = 2;
 
 But there is a limit, an hardware limit
 ```cpp
-// 256 cuda kernels - 10 compute steps take 0.037
-// 2048 cuda kernels - ERROR!
+// 256-threads cuda kernel - 10 compute steps take 0.037
+// 2048-threads cuda kernels - ERROR!
 // !! is not possible to launch more than 1024 threads in a thread block!!
 //
 const int number_of_threads = 2048;
@@ -415,6 +415,8 @@ Instead grid size frequently depend on problem size.
 
 As a rule of thumb, use `cuda::ceil_div` to compute grid size.
 ```cpp
+// 5.120.000-threads cuda kernel - 10 compute steps take 0.0003
+//
 //__global__
 void grid_kernel(dli::temperature_grid_f in, float *out)
 //{
@@ -439,3 +441,40 @@ int ceil_div(int a, int b)
     grid_kernel<<<grid_size, block_size, 0, stream>>>(in, out);
 //}
 ```
+Example: Detect Asymmetry
+```cpp
+void symmetry_check(dli::temperature_grid_f temp, int row)
+{
+    int column = 0;
+
+    float top = temp(row, column);
+    float bottom = temp(temp.extent(0) - 1 - row, column);
+    float diff = abs(top - bottom);
+    if (diff > 0.1) {
+        printf("Error: asymmetry in %d\n", column);
+    }
+}
+```
+```cpp
+__global__ void symmetry_check_kernel(dli::temperature_grid_f temp, int row)
+//{
+    int column = blockIdx.x * blockDim.x + threadIdx.x;
+//
+//    if (abs(temp(row, column) - temp(temp.extent(0) - 1 - row, column)) > 0.1) {
+//        printf("Error: asymmetry in %d\n", column);
+//    }
+//}
+//
+void symmetry_check(dli::temperature_grid_f temp, int row)
+{
+    int width       = temp.extent(1);
+    int block_size  = 256;
+    int grid_size   = cuda::ceil_div(width, block_size);
+
+    int target_row  = 0;
+    symmetry_check_kernel<<<1, 1, 0, stream>>>(temp, target_row);
+}
+```
+-> ERROR!!
+By rounding up the number of threads to be sure to have at least one thread for each element of the problem we might have more threads than elemets and we can incour in an out of bound error in which on ore more threads will try to access an element that doesn't exists.
+![alt text](src/image-3.png)
