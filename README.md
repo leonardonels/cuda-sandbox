@@ -310,5 +310,132 @@ CUDA Kernels are custom function at the same level as thrust functions so within
 Kernels are:
 - launched with a triple chevron syntax <<<?,?,?,stream>>> from the CPU
 - executed in `device execution space`
-- asynchronous and
+- asynchronous, and
 - parallel
+
+```cpp
+// thrust/cub - 10 compute steps take 0.000043
+void simulate(temperature_grid_f in,
+             float *out,
+             cudaStream_t stream)
+{
+    auto ids = thrust::make_counting_iterator(0);
+    cub::DeviceTransform::Transform(
+        ids, out, in.size(),
+        [in] __host__ __device__ (int cell_id){
+            return dli::compute(cell_id, in);
+        }, stream);
+}
+
+// single cuda kernels - 10 compute steps take 4.15
+__global__
+void single_thread_kernel(dli::temperature_grid_f in, float *out)
+{
+    for (int id = 0; id < in.size(); id++)
+    {
+        out[id] = dli::compute(id, in);
+    }
+}
+
+void simulate(temperature_grid_f in,
+             float *out,
+             cudaStream_t stream)
+{
+    single_thread_kernel<<<1, 1, 0, stream>>>(in, out);
+}
+```
+But this implementation is very slow beacuse be are calling a single cuda core to do the whole computation, instead of relying on thrust or cub libraries that are design to parallelise as much as possible.
+
+With CUDA Kernels we need to implement the parallelisation ourself.
+```cpp
+// 2 cuda kernels - 10 compute steps take 2.06
+//
+const int number_of_threads = 2;
+//
+//__global__
+//void block_kernel(dli::temperature_grid_f in, float *out)
+//{
+    int thread_index = threadIdx.x; // builtin variables that holds the index of the current thread
+    for (int id = thread_index; id < in.size(); id+=number_of_threads)
+    {
+        out[id] = dli::compute(id, in);
+    }
+//}
+//
+//void simulate(temperature_grid_f in,
+//             float *out,
+//             cudaStream_t stream)
+//{
+    block_kernel<<<1, number_of_threads, 0, stream>>>(in, out);
+//}
+```
+
+But there is a limit, an hardware limit
+```cpp
+// 256 cuda kernels - 10 compute steps take 0.037
+// 2048 cuda kernels - ERROR!
+// !! is not possible to launch more than 1024 threads in a thread block!!
+//
+const int number_of_threads = 2048;
+//
+//__global__
+//void block_kernel(dli::temperature_grid_f in, float *out)
+//{
+//    int thread_index = threadIdx.x;
+//    for (int id = thread_index; id < in.size(); id+=number_of_threads)
+//    {
+//        out[id] = dli::compute(id, in);
+//    }
+//}
+//
+//void simulate(temperature_grid_f in,
+//             float *out,
+//             cudaStream_t stream)
+//{
+    block_kernel<<<1, number_of_threads, 0, stream>>>(in, out); // invalid configuration argument
+//}
+```
+WHY?
+- threads are grouped in blocks
+- all blocks are the same size (max 1024 threads)
+- thread indexing is local within a thread block
+- a collection of blocks is called a grid
+- blockIdx.x stores the index of current block within the grid
+- blockDim.x stores the number of thread in the block
+- gridDim.x stores the number of blocks in the grid
+
+Thread block sie doesn't depend on problem size, there is no block size that fits all kernels.
+
+As a rule of thumb:
+- use block size that are multiple of 32
+- use 256 as a good default
+- profile for further tuning
+
+Instead grid size frequently depend on problem size.
+
+As a rule of thumb, use `cuda::ceil_div` to compute grid size.
+```cpp
+//__global__
+void grid_kernel(dli::temperature_grid_f in, float *out)
+//{
+    int thread_index = blockDim.x * blockIdx.x + threadIdx.x;
+//    for (int id = thread_index; id < in.size(); id+=number_of_threads)
+//    {
+//        out[id] = dli::compute(id, in);
+//    }
+//}
+//
+int ceil_div(int a, int b)
+{
+    return (a + b - 1) / b;
+}
+//
+//void simulate(temperature_grid_f in,
+//             float *out,
+//             cudaStream_t stream)
+//{
+    int block _size = 256;
+    int grid_size = cuda::ceil_div(in.size(), block_size);
+    grid_kernel<<<grid_size, block_size, 0, stream>>>(in, out);
+//}
+```
