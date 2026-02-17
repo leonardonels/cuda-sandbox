@@ -13,6 +13,8 @@ For comprehensive documentation on the algorithms and data structures, refer to 
 - [transform_output_iterator](#transform_output_iterator)
 - [Notes from Theory](#notes-from-theory)
 - [cub vs thrust](#cub-vs-thrust)
+- [Nsight Systems](#nsight-systems)
+- [stream](#cudastream)
 
 ## std::transform
 ```cpp
@@ -183,7 +185,7 @@ cudaDeviceSynchronize();
 auto end = std::chrono::high_resolution_clock::now();
 ```
 ## Nsight Systems
-To better visualize what's happening between cpu and gpu nvidia neveloped [Nsight System](https://developer.nvidia.com/nsight-systems/get-started).
+To better visualize what's happening between cpu and gpu nvidia neveloped [Nsight Systems](https://developer.nvidia.com/nsight-systems/get-started).
 ```bash
 !nvcc --extended-lambda -o /tmp/a.out Solutions/compute-io-overlap.cpp -x cu -arch=native # build executable
 !sudo nsys profile --cuda-event-trace=false --force-overwrite true -o compute-io-overlap /tmp/a.out # run and profile executable
@@ -247,7 +249,7 @@ cublasLtMatmul(lightHandle,     // cubLasLtHandle_t
 ```
 
 If we need to copy data in between computations we can use `cudaStreamSynchronize()` to be sure that the next iteration wont override the data that is currently beein copied from device to host or vice versa. In this way we are going to program different blocks with checkpoint between blocks -> this is fast, but we can do faster.
-Since the memory bandwidth on device is usually ~10 times faster that the memory bandwidth on the host, which is already ~3 times faster than the memory bandwidth avaiable on the pci-e bus, copies device to device and host to host are almost free (relative speaking to host to device or device to host), so we can introduce a buffer on device (or on the host) to copy the result of teh computation and allow the copy between device and host during the next computation.
+Since the memory bandwidth on device is usually ~10 times faster that the memory bandwidth on the host, which is already ~3 times faster than the memory bandwidth avaiable on the pci-e bus, copies device to device and host to host are almost free (relative speaking to host to device or device to host).
 Examples from [techpowerup.com](https://www.techpowerup.com/gpu-specs/):
 
                     |  memory bandwidth |
@@ -259,6 +261,7 @@ Examples from [techpowerup.com](https://www.techpowerup.com/gpu-specs/):
     RTX 3090Ti      |   1.01 TB/s       |
     RTX 5090        |   1.79 TB/s       |
 
+We can introduce a buffer on device (or on the host) to copy the result of teh computation and allow the copy between device and host during the next computation.
 ```cpp
 thrust::copy(d_prev.begin(), d_prev.end(), d_buffer.begin());
 cudaMemcpyAsync(h_temp_ptr, buffer_ptr, num_bytes, cudaMemcpyDeviceToHost, copy_stream);
