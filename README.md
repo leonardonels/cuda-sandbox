@@ -504,4 +504,14 @@ By rounding up the number of threads to be sure to have at least one thread for 
 ![alt text](src/image-4.png)
 
 ## Histogram approach
-lesson3::24:33
+We don't need an mdspan (Multi Dimenstional SPAN) since an histogram is a one-dimentional structure, we can use a simple span.
+```cpp
+__global__ void histogram_kernel(
+    cuda::std::span<float> temperature;
+    cuda::std::span<int> histogram;)
+{
+    int cell = blockIdx.x * blockDIM.x + threadIdx.x;           // each threads bins exactly one cell
+    int bin = static_cast<int>(temperature[cell] / bin_width);  // divide temperature by bin width (10 degrees)
+                                                                // to compiute the bin index
+}
+```
