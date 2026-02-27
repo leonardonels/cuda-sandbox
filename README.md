@@ -19,6 +19,7 @@ For comprehensive documentation on the algorithms and data structures, refer to 
 - [cuda kernel functions](#cuda-kernels)
     - [boundary check](#boundary-check)
     - [histogram approach](#histogram-approach)
+- [__syncthreads()](#__syncthreads)
 
 ## std::transform
 ```cpp
@@ -507,11 +508,115 @@ By rounding up the number of threads to be sure to have at least one thread for 
 We don't need an mdspan (Multi Dimenstional SPAN) since an histogram is a one-dimentional structure, we can use a simple span.
 ```cpp
 __global__ void histogram_kernel(
-    cuda::std::span<float> temperature;
-    cuda::std::span<int> histogram;)
+    cuda::std::span<float> temperature,
+    cuda::std::span<int> histogram)
 {
     int cell = blockIdx.x * blockDIM.x + threadIdx.x;           // each threads bins exactly one cell
     int bin = static_cast<int>(temperature[cell] / bin_width);  // divide temperature by bin width (10 degrees)
                                                                 // to compiute the bin index
+
+    int old_count = histogram[bin];                             // read old valure of selected bin
+    int new_count = old_count + 1;                              // modify the value we just red (increment)
+    histogram[bin] = new_count;                                 // write modified value back into memory
 }
+```
+In this simple `histogram_kernel` we have a data race in it: millions of threads read and write the same memory location, resultig in the same computation done by all threads.
+![alt text](src/image-5.png)
+To fix this in cpp we can use `atomic operations`, where the reading, modification and storing are treated as one single operation.
+```cpp
+cuda::std::atomic_ref<int> ref(count[0]);   // atomic memory operations are invisible
+                                            // atomic_ref applies atomic operations to the object it references
+                                            // for our example, atomic increment appears as invisible read-modify-write opeartion
+ref.fetch_add(3);
+ref.fetch_sub(2);
+ref.fetch_and(1);
+```
+![alt text](src/image-6.png)
+```cpp
+//__global__ void histogram_kernel(
+//    cuda::std::span<float> temperature,
+//    cuda::std::span<int> histogram)
+//{
+//    int cell = blockIdx.x * blockDIM.x + threadIdx.x;
+//    int bin = static_cast<int>(temperature[cell] / bin_width);
+
+      cuda::std::atomic_ref<int> ref(histogram[bin]);   // wrap reference to bin into atomic op
+      ref.fetch_add(1);                                 // fetch add to bin using atomic ref
+//}
+```
+> Now it works correctly, but is very very slow, why?
+![alt text](src/image-7.png)
+Atomics let us regain functional correctness, but this comes at a cost of serialisation of memory accesses, what now?
+![alt text](src/image-8.png)
+we could add privatized histograms, one per thread block.
+```cpp
+//__global__ void histogram_kernel(
+//    cuda::std::span<float> temperature;,
+      cuda::stf::span<int> block_histograms,
+//    cuda::std::span<int> histogram)
+//{
+      cuda::std::span<int> block_histogram =    // obtain a view over thread-block privat histogram
+        block_histograms.subspan(
+            blockIdx.x * histogram.size(),
+            histogram.size());
+//            
+//    int cell = blockIdx.x * blockDIM.x + threadIdx.x;
+//    int bin = static_cast<int>(temperature[cell] / bin_width);
+//
+      cuda::std::atomic_ref<int> block_ref(block_histogram[bin]);
+      block_ref.fetch_add(1);
+//
+      if (threadIdx.x < histogram.size())
+      {
+        cuda::std::atomic_ref<int> ref(histogram[threadIdx.x]);
+        ref.fetch_add(block_histogram[threadIdx.x]);
+      }
+//}
+```
+Unfortunately we can't assume any order of operations performed by concurrent threads.
+
+## __syncthreads()
+Similar to std::barrier, but not allowd inside conditionals.
+
+Why there are both `cuda::std::atomic_ref` and `cuda::atomic_ref`?
+- both have equivalent interfaces
+- the only difference is that `cuda::atomic_ref` extends `cuda::std::atomic_ref` with additional `cuda::thread_scope` parameters
+> Using appropriate thread scope can significantly affect performance!!!
+```cpp
+cuda::atomic_ref<int, cuda::thread_scope_system> ref(...);
+// equivalent to cuda::std::atomic_ref
+// each thread of a given system is related to each other thread by system thread scope
+```
+```cpp
+cuda::atomic_ref<int, cuda::thread_scope_device> ref(...);
+// each GPU thread is related to each other GPU thread on the same GPU by device thread scope
+```
+```cpp
+cuda::atomic_ref<int, cuda::thread_scope_block> ref(...);
+// each GPU thread is related to each other GPU thread on the same thread block by the block thread scope
+```
+```cpp
+//__global__ void histogram_kernel(
+//    cuda::std::span<float> temperature;,
+//    cuda::stf::span<int> block_histograms,
+//    cuda::std::span<int> histogram)
+//{
+//    cuda::std::span<int> block_histogram =    // obtain a view over thread-block privat histogram
+//      block_histograms.subspan(
+//          blockIdx.x * histogram.size(),
+//          histogram.size());
+//            
+//    int cell = blockIdx.x * blockDIM.x + threadIdx.x;
+//    int bin = static_cast<int>(temperature[cell] / bin_width);
+//
+      cuda::std::atomic_ref<int, cuda::thread_scope_block> block_ref(block_histogram[bin]);
+//    block_ref.fetch_add(1);
+      __syncthreads();
+//
+//    if (threadIdx.x < histogram.size())
+//    {
+        cuda::std::atomic_ref<int, cuda::thread_scope_device> ref(histogram[threadIdx.x]);
+//      ref.fetch_add(block_histogram[threadIdx.x]);
+//    }
+//}
 ```
