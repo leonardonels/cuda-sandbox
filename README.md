@@ -21,6 +21,7 @@ For comprehensive documentation on the algorithms and data structures, refer to 
     - [histogram approach](#histogram-approach)
 - [__syncthreads()](#__syncthreads)
 - [shared memory](#shared-memory)
+- [CUB](#cub-interface)
 
 ## std::transform
 ```cpp
@@ -664,6 +665,74 @@ Instead of allocating the block histogram outside of the kernel in device memory
 //
 //    cuda::std::atomic_ref<int, cuda::thread_scope_block> block_ref(block_histogram[bin]);
 //    block_ref.fetch_add(1);
+//    __syncthreads();
+//
+// ...
+//}
+```
+## CUB Interface
+> When altering a kernel we can still use libaries like cub for cooperative algorithms, that allows us to not reinvent everithing from scratch.
+> libcu++ for vocaulary types
+> cuBLASDx and CUTLASS for linear algebra
+> cuFFTDx for FFT
+> and more...
+
+From Serial
+- one thread invokes algorithm
+- one thread executes algorithm
+
+To Cooperative
+- many threads invoke algorithm
+- many threads execute algorithm
+
+And Parallel
+- one thread invokes algorithm
+- many threads execute algorithm
+
+```cpp
+// allocate temp storage in shared memeory
+__shared__ cub::BlockReduce<int, 4>::TempStorage storage;
+
+// construct an instance of the algorithm
+cub::BlockReduce<int, 4> reducer(storage);
+
+// invoke method of the algorithm instance
+int block_num = reduce.Sum(threadIdx.x);
+```
+```cpp
+// cub::BlockHistogram
+template <
+    typename T,
+    int BlockDimX,
+    int ItemsPerThread,
+    int Bins,
+    cub::blockHistogramAlgorithm
+        Algorithm = BLOCK_HISTO_SORT>
+class cub::BlockHistogram
+{
+    ...
+}
+```
+```cpp
+//__global__ void histogram_kernel(
+//    cuda::std::span<float> temperature,
+//    cuda::std::span<int> histogram)
+//{
+//    __shared__ int block_histogram[num_bins];
+//
+//    if(threadIdx.x < num_bins){
+//      block_histograms[threadIdx.x] = 0;
+//    }
+//    __syncthreads();
+//            
+//    int cell = blockIdx.x * blockDIM.x + threadIdx.x;
+//    int bin = static_cast<int>(temperature[cell] / bin_width);
+//
+      using histogram_t = cub::BlockHistogram<int, block_size, 1, 10>;
+      __shared__ typename histogram_t::TempStorage temp_storage;
+
+      histogram_t(temp_storage).Histogram(bins, block_histogram);
+
 //    __syncthreads();
 //
 // ...
