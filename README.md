@@ -20,6 +20,7 @@ For comprehensive documentation on the algorithms and data structures, refer to 
     - [boundary check](#boundary-check)
     - [histogram approach](#histogram-approach)
 - [__syncthreads()](#__syncthreads)
+- [shared memory](#shared-memory)
 
 ## std::transform
 ```cpp
@@ -551,7 +552,7 @@ Atomics let us regain functional correctness, but this comes at a cost of serial
 we could add privatized histograms, one per thread block.
 ```cpp
 //__global__ void histogram_kernel(
-//    cuda::std::span<float> temperature;,
+//    cuda::std::span<float> temperature,
       cuda::stf::span<int> block_histograms,
 //    cuda::std::span<int> histogram)
 //{
@@ -597,7 +598,7 @@ cuda::atomic_ref<int, cuda::thread_scope_block> ref(...);
 ```
 ```cpp
 //__global__ void histogram_kernel(
-//    cuda::std::span<float> temperature;,
+//    cuda::std::span<float> temperature,
 //    cuda::stf::span<int> block_histograms,
 //    cuda::std::span<int> histogram)
 //{
@@ -618,5 +619,53 @@ cuda::atomic_ref<int, cuda::thread_scope_block> ref(...);
         cuda::std::atomic_ref<int, cuda::thread_scope_device> ref(histogram[threadIdx.x]);
 //      ref.fetch_add(block_histogram[threadIdx.x]);
 //    }
+//}
+```
+## shared memory
+![alt text](src/image-9.png)
+By not exploiting the L1 cache we still have performance left on the table...
+
+Fortunally CUDA provides a software-defined cache that's called shared memory.
+> Shared memory is only accessible within a give thread block since L1 cache is confined inside each SM.
+
+```cpp
+//__global__ void kernel()
+//{
+      __shared__ int shared[4];             // to allocate an array in shared memory space, just use __shared__ specifier
+
+      shared[threadIdx.x] = threadIdx.x;    // it can be used as if it was an ordinary array
+
+      __syncthreads();                      // just me mindful of other threads and avoid data races with __syncthreads
+//
+//    if(threadIdx.x == 0)
+//    {
+//        for(int i = 0l i < 4; i++){
+//            std::print("shared[%d] = %d\n", i, shared[i]);
+//        }
+//    }
+//}
+```
+![alt text](src/image-10.png)
+Instead of allocating the block histogram outside of the kernel in device memory, we can allocate it inside the kernel within shared memeory.
+```cpp
+//__global__ void histogram_kernel(
+//    cuda::std::span<float> temperature,
+//    cuda::std::span<int> histogram)
+//{
+      __shared__ int block_histogram[num_bins]; // allocating block histogram in SHM
+
+      if(threadIdx.x < num_bins){
+        block_histograms[threadIdx.x] = 0;  // initialisation of the block to zero
+      }
+      __syncthreads();  // wait for the complete initialisation
+//            
+//    int cell = blockIdx.x * blockDIM.x + threadIdx.x;
+//    int bin = static_cast<int>(temperature[cell] / bin_width);
+//
+//    cuda::std::atomic_ref<int, cuda::thread_scope_block> block_ref(block_histogram[bin]);
+//    block_ref.fetch_add(1);
+//    __syncthreads();
+//
+// ...
 //}
 ```
