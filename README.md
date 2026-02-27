@@ -647,7 +647,7 @@ Fortunally CUDA provides a software-defined cache that's called shared memory.
 //}
 ```
 ![alt text](src/image-10.png)
-Instead of allocating the block histogram outside of the kernel in device memory, we can allocate it inside the kernel within shared memeory.
+Instead of allocating the block histogram outside of the kernel in device memory, we can allocate it inside the kernel within shared memory.
 ```cpp
 //__global__ void histogram_kernel(
 //    cuda::std::span<float> temperature,
@@ -671,11 +671,7 @@ Instead of allocating the block histogram outside of the kernel in device memory
 //}
 ```
 ## CUB Interface
-> When altering a kernel we can still use libaries like cub for cooperative algorithms, that allows us to not reinvent everithing from scratch.
-> libcu++ for vocaulary types
-> cuBLASDx and CUTLASS for linear algebra
-> cuFFTDx for FFT
-> and more...
+> When altering a kernel we can still use libaries like cub for cooperative algorithms, that allows us to not reinvent everithing from scratch. libcu++ for vocaulary types, cuBLASDx and CUTLASS for linear algebra, cuFFTDx for FFT and more...
 
 From Serial
 - one thread invokes algorithm
@@ -690,7 +686,7 @@ And Parallel
 - many threads execute algorithm
 
 ```cpp
-// allocate temp storage in shared memeory
+// allocate temp storage in shared memory
 __shared__ cub::BlockReduce<int, 4>::TempStorage storage;
 
 // construct an instance of the algorithm
